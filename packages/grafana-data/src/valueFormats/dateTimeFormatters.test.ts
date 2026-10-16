@@ -137,6 +137,19 @@ describe('date time formats', () => {
 });
 
 describe('duration', () => {
+  it.each([
+    { size: 0.5, decimals: 0, timeScale: Interval.Millisecond, expected: '< 1 millisecond' },
+    { size: 0.9999, decimals: 2, timeScale: Interval.Millisecond, expected: '< 1 millisecond' },
+    { size: -0.5, decimals: 0, timeScale: Interval.Millisecond, expected: '< 1 millisecond ago' },
+    { size: 0.0004, decimals: 0, timeScale: Interval.Second, expected: '< 1 millisecond' },
+    { size: -0.0004, decimals: 2, timeScale: Interval.Second, expected: '< 1 millisecond ago' },
+  ])(
+    'formats $size $timeScale with $decimals additional units as $expected',
+    ({ size, decimals, timeScale, expected }) => {
+      expect(formattedValueToString(toDuration(size, decimals, timeScale))).toBe(expected);
+    }
+  );
+
   it('0 milliseconds', () => {
     const str = toDurationInMilliseconds(0, 0);
     expect(formattedValueToString(str)).toBe('0 milliseconds');
