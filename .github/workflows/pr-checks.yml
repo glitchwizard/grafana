@@ -29,16 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - name: Checkout Actions
-        uses: actions/checkout@v3
-        with:
-          repository: "grafana/grafana-github-actions"
-          path: ./actions
-          ref: main
-      - name: Install Actions
-        run: npm install --production --prefix ./actions
       - name: Run PR Checks
-        uses: ./actions/pr-checks
+        uses: grafana/grafana-github-actions/pr-checks@main
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           configPath: pr-checks
