@@ -42,4 +42,8 @@ jobs:
       - name: Check package types
         run: yarn workspace @grafana/data typecheck
       - name: Check patch whitespace
-        run: git show --format= --check HEAD
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git diff --check "$BASE_SHA" HEAD
