@@ -15,7 +15,7 @@ Requirements: Python 3, `ssh-keygen`, and GitHub CLI (`gh`) authenticated as `gl
 
 3. The setup script creates a dedicated, unattended SSH signing key. It registers only the public half as a **signing key**, not an SSH authentication key.
 4. It restricts the `contribution-signing` environment to `main`, stores the private half in the environment's encrypted `CONTRIBUTION_SIGNING_KEY` secret, and sets the account's numeric-ID noreply address in `CONTRIBUTION_SIGNING_EMAIL`.
-5. On success, it confirms that the secret exists and deletes its temporary local key files. It never prints the private key. No upstream account, repository, or permission is modified.
+5. On success, it confirms that the secret exists and deletes its temporary local key files. It never prints the private key. No upstream repository or existing connection permissions are modified.
 
 If GitHub CLI lacks SSH signing-key permission, use GitHub's normal authorization flow for `write:ssh_signing_key`, or enroll the key through account settings yourself. Do not paste private keys into chat. If enrollment fails after public-key registration but before secret storage, the unused public entry can be removed from account settings before retrying.
 
@@ -43,7 +43,9 @@ Enrollment is not complete until the key is registered and the encrypted secret 
 ## Test the implementation
 
 ```sh
-python3 -m unittest discover -s .github/contribution-signing -p test_sign.py -v
+python3 -m unittest discover -s .github/contribution-signing -p 'test_*.py' -v
 ```
 
 The tests exercise real SSH signature verification and tree preservation, rejection of workflow changes, stale requests, non-owner/cross-repository requests, and a real concurrent-update lease failure.
+
+The installed validation workflow currently covers the formatter change in review PR #3. Future issues need appropriate targeted validation configured before relying on this signing handoff; the formatter suite is not universal coverage for other changes.
