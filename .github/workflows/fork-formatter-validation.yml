@@ -1,6 +1,16 @@
 name: Fork formatter validation
 
 on:
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: Full signed contribution head SHA
+        required: true
+        type: string
+      base_sha:
+        description: Full review base SHA
+        required: true
+        type: string
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -8,21 +18,28 @@ permissions:
   contents: read
 
 concurrency:
-  group: fork-formatter-validation-${{ github.event.pull_request.number }}
+  group: fork-formatter-validation-${{ github.event.pull_request.number || inputs.head_sha }}
   cancel-in-progress: true
 
 jobs:
   formatter:
     name: Formatter tests, lint, and types
-    if: github.repository == 'glitchwizard/grafana' && github.event.pull_request.number == 3 && github.event.pull_request.head.repo.full_name == 'glitchwizard/grafana'
+    if: github.repository == 'glitchwizard/grafana' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.number == 3 && github.event.pull_request.head.repo.full_name == 'glitchwizard/grafana'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Validate explicit commit inputs
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || inputs.head_sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || inputs.base_sha }}
+        run: |
+          [[ "$HEAD_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ ]]
       # Execute the reviewed head with a read-only token and no persisted credentials.
       # This fork-only job does not use Grafana secrets or organization runners.
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || inputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -43,7 +60,7 @@ jobs:
         run: yarn workspace @grafana/data typecheck
       - name: Check patch whitespace
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || inputs.base_sha }}
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           git diff --check "$BASE_SHA" HEAD
