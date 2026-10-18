@@ -1,0 +1,50 @@
+name: Sign contribution commits
+
+on:
+  pull_request_target:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Review PR number inside this fork
+        required: true
+        type: string
+      expected_head_sha:
+        description: Full reviewed contribution head SHA
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: contribution-signing-${{ github.event.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    if: >-
+      github.repository == 'glitchwizard/grafana' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'glitchwizard' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.label.name == 'automation/sign-commits')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: contribution-signing
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+    steps:
+      - name: Load trusted signing code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: .github/contribution-signing
+      - name: Sign reviewed tree and verify with GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTRIBUTION_SIGNING_KEY: ${{ secrets.CONTRIBUTION_SIGNING_KEY }}
+          CONTRIBUTION_SIGNING_EMAIL: ${{ vars.CONTRIBUTION_SIGNING_EMAIL }}
+        run: python3 .github/contribution-signing/sign.py
