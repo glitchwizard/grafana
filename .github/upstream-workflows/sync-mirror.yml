@@ -22,4 +22,3 @@ jobs:
       dest_repo: "${{ github.repository }}-security-mirror"
       patch_repo: "${{ github.repository }}-security-patches"
     secrets: inherit
-
